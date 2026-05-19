@@ -1,0 +1,12 @@
+import pandas as pd
+df = pd.read_parquet('2025-01.parquet')
+df['readabletime'] = pd.to_datetime(df['timestamp'], unit='ms')
+print('shape:', df.shape)
+print('columns:', df.columns.tolist())
+print('first 3 rows:')
+print(df.head(3))
+print("Last 3 rows:")
+print(df.tail(3))
+print('data types:')
+print(df.dtypes)
+df.to_csv("first data files to verrify.csv", index=False)
