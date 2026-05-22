@@ -1,6 +1,6 @@
 import pandas as pd
 import glob
-
+#Load the data
 parquet_path = r'C:\Users\JESUS\Desktop\Royal Trust\Back Testing'
 all_files = glob.glob(parquet_path + '/2025-*.parquet')
 print(f"Found {len(all_files)} files: {all_files}")
@@ -17,30 +17,32 @@ print(f"Total rows (all months combined): {len(df):,}")
 df['time'] = pd.to_datetime(df['timestamp'], unit='ms')
 df['date'] = df['time'].dt.date
 
+#Strategy configurations (RULES)
 ORB_MINUTES = 15
 RR = 2
-
+# Prepare the  Trades 
 trades = []
 
 for day in df['date'].unique():
     day_data = df[df['date'] == day].copy()
     if len(day_data) < 20:
         continue
-
+# Establish the Opening Range 
     first_15 = day_data.head(ORB_MINUTES)
     range_high = first_15['high'].max()
     range_low = first_15['low'].min()
 
     rest = day_data.iloc[ORB_MINUTES:].copy()
     trade_taken = False
-
+    
+# Loop through the remaining data of the day
     for i in range(len(rest)):
         if trade_taken:
             break
 
         row = rest.iloc[i]
         price = row['close']
-
+# long trade code
         if price > range_high:
             entry = price
             stop = range_low
@@ -50,6 +52,7 @@ for day in df['date'].unique():
 
             for j in range(i, len(rest)):
                 later = rest.iloc[j]
+                #our Stop Loss
                 if later['low'] <= stop:
                     exit_price = stop
                     break
@@ -65,7 +68,7 @@ for day in df['date'].unique():
             trades.append([day, "LONG", round(entry, 2), round(
                 exit_price, 2), round(pnl, 2), result])
             trade_taken = True
-
+# Short trade code 
         elif price < range_low:
             entry = price
             stop = range_high
@@ -90,7 +93,7 @@ for day in df['date'].unique():
             trades.append([day, "SHORT", round(entry, 2), round(
                 exit_price, 2), round(pnl, 2), result])
             trade_taken = True
-
+# If we found and recorded trades, convert our raw list into a clean Pandas DataFrame
 if trades:
     trade_sheet = pd.DataFrame(
         trades, columns=['Date', 'Type', 'Entry', 'Exit', 'PnL', 'Result'])
